@@ -20,12 +20,17 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by monet on 2017-06-14.
  */
-class mastershipinmonitor {
+/*class mastershipinmonitor {
+    public static final String CANcontrollerIP = "128.110.153.202";
+    public static final String RESTURL_DOMASTERSHIP = "http://"
+            + "<controllerIP>"
+            + ":"
+            + "<controllerPort>"
+            + "/onos/v1/mastership";
     public static final String RESTURL_PREFIX = "http://<controllerIP>:<controllerPort>";
-    public static final String RESTURL_DOMASTERSHIP = RESTURL_PREFIX + "/onos/v1/mastership";
-    public static final String CANcontrollerIP = "141.223.84.201";
+    //public static final String RESTURL_DOMASTERSHIP = RESTURL_PREFIX + "/onos/v1/mastership";
     //public static final String MigrationTo = "192.168.56.102";
-
+    // small topology: 141.223.84.201
     public mastershipinmonitor() {
     }
 
@@ -46,7 +51,7 @@ class mastershipinmonitor {
             return;
         }
     }
-}
+}*/
 class Switch {
 
     public String Device_ID;
@@ -325,10 +330,15 @@ class monitor {
     /*******************************************************************************************/
 
     public static final String RESTURL_PREFIX = "http://<controllerIP>:<controllerPort>";
-    public static final String RESTURL_DOMASTERSHIP = RESTURL_PREFIX + "/onos/v1/mastership";
+    //public static final String RESTURL_DOMASTERSHIP = RESTURL_PREFIX + "/onos/v1/mastership";
+    public static final String RESTURL_DOMASTERSHIP = "http://"
+            + "<controllerIP>"
+            + ":"
+            + "<controllerPort>"
+            + "/onos/v1/mastership";
     public static final String RESTURL_MONITERPREFIX = RESTURL_DOMASTERSHIP + "/<controllerID>";
     public static final String RESTURL_MONITER = RESTURL_MONITERPREFIX + "/device";
-    public static final String CANcontrollerIP = "141.223.84.201";
+    public static final String CANcontrollerIP = "128.110.153.202";
 
     static final ArrayList<LinkedHashMap<String, Double>> MatchTimetoCPU2 = new ArrayList<>();
     static final ArrayList<LinkedHashMap<String, Double>> Controller_IdleCPU = new ArrayList<>();
@@ -337,9 +347,12 @@ class monitor {
     static final LinkedList<ControllerWithDevice> ONOS2_Controller = new LinkedList <ControllerWithDevice>();
     static final LinkedList<ControllerWithDevice> ONOS3_Controller = new LinkedList <ControllerWithDevice>();
 
-    static final String ONOS1_IP = "192.168.56.101";
-    static final String ONOS2_IP = "192.168.56.102";
-    static final String ONOS3_IP = "192.168.56.104";
+    /*static final String ONOS1_IP = "192.168.201.101";
+    static final String ONOS2_IP = "192.168.201.102";
+    static final String ONOS3_IP = "192.168.201.103";*/
+    static final String ONOS1_IP = "192.168.201.101";
+    static final String ONOS2_IP = "192.168.201.102";
+    static final String ONOS3_IP = "192.168.201.103";
 
     //static Boolean excuted[] = {false,false,false};
 
@@ -404,7 +417,7 @@ class monitor {
         StringBuffer sb = new StringBuffer();
 
         //Connect SSH
-        Session session = new JSch().getSession("test", "141.223.84.201", Integer.parseInt("22"));
+        Session session = new JSch().getSession("wkim", CANcontrollerIP, Integer.parseInt("22"));
         Properties conf = new Properties();
         conf.put("StrictHostKeyChecking", "no");
         session.setConfig(conf);
@@ -629,7 +642,7 @@ class monitor {
     public static Double newCalMigSum(LinkedList<ControllerWithDevice> Controller, int time, int flagcnt, Double diff, ArrayList<HashMap<String, String>> MatchTimetoDeviceID){
         Double newsum = 0.0;
 
-        Set set = MatchTimetoDeviceID.get(time).keySet();  //matchtimetoDeviceId는 update됐으니까 time으로
+        Set set = MatchTimetoDeviceID.get(time).keySet();  // matchtimetoDeviceId는 update됐으니까 time으로
         Iterator iter_ = set.iterator();                   // Controller List는 지금 만드는 거니까 time-1을 참조해서 만듬
 
         while(iter_.hasNext()){
@@ -672,7 +685,9 @@ class monitor {
         int migFlagcnt = CountMigFlag(Controller,size,checktime-1);
         System.out.print("MakeSwitchList에 있는 MigFlagcnt-> " + migFlagcnt + "\n");
 
-        Double diff = ((Controller_IdleCPU.get(checktime).get(onosname)) - (Controller_IdleCPU.get(checktime - 1).get(onosname)));
+        Double abs_diff = Math.abs(((Controller_IdleCPU.get(checktime).get(onosname)) - (Controller_IdleCPU.get(checktime - 1).get(onosname))));
+        Double diff = abs_diff;
+        //Double diff = ((Controller_IdleCPU.get(checktime).get(onosname)) - (Controller_IdleCPU.get(checktime - 1).get(onosname)));
         Double migFlagsum = newCalMigSum(Controller,checktime,migFlagcnt,diff,MatchTimetoDeviceID);
         System.out.print("MakeSwitchList에 있는 MigFlagsum-> " + migFlagsum + "\n");
 
@@ -695,16 +710,16 @@ class monitor {
             // CASE1: 이제껏 migration을 경험한 device도 없고, time에 migration을 한 device도 없음.
             if(CheckAllFlag == false && CheckConOnceBefore == false){
                 SwitchCPU = (Controller_IdleCPU.get(checktime).get(onosname))/size;
-                System.out.print("  <case1>  :" + DeviceID + "\n");
+                System.out.print("===<case1>  :" + DeviceID + "\n");
             }
             // CASE2: 이제껏 migration을 경험한 device가 있지만, time엔 migration을 한 device가 없음.
             else if(CheckAllFlag == false && CheckConOnceBefore == true){
                 SwitchCPU = Controller.get(checktime-1).BringCPU(DeviceID) + (diff/size);
-                System.out.print("  <case2>  :" + DeviceID + "\n");
+                System.out.print("===<case2>  :" + DeviceID + "\n");
             }
             // CASE3: time에 migration을 한 device가 있고, 이 device가 migration을 한 device
             else if(CheckAllFlag == true && CheckMigBefore == true){
-                System.out.print("  <case3>  :" + DeviceID + "\n");
+                System.out.print("===<case3>  :" + DeviceID + "==================\n");
                 SwitchCPU = ((Controller.get(checktime-1).BringCPU(DeviceID))*0.5) + ((diff/migFlagcnt) * 0.5);
 
                 System.out.println("(time-1)에 해당 device의 CPU: " + (Controller.get(checktime-1).BringCPU(DeviceID)) );
@@ -714,21 +729,23 @@ class monitor {
                 System.out.println("(time -1)에 migration flag가 true인 devide의 개수: " + migFlagcnt);
                 System.out.println("+ " + ((diff/migFlagcnt) * 0.5) + "<--변화한 controller의 변화량 / migration flag가 1인 device 개수 x 0.5" );
                 System.out.println( SwitchCPU + "<--둘의 합\n");
+                System.out.println("=============================================\n");
 
             }
             // CASE4: time에 migration을 한 device가 있고, 이 device가 migration을 한 device는 아님
             else if(CheckAllFlag == true && CheckMigBefore == false){
-                System.out.print("  <case4>  :" + DeviceID + "\n");
+                System.out.print("===<case4>  :" + DeviceID + "==================\n");
                 Double newsum = Controller_IdleCPU.get(checktime).get(onosname) - migFlagsum;
                 SwitchCPU = (newsum / (size - migFlagcnt));
 
-                System.out.println("time에 " + onosname + "의 전체 CPU: " + (Controller_IdleCPU.get(checktime).get(onosname)) + "\n");
+                System.out.println("time에 " + onosname + "의 전체 CPU: " + (Controller_IdleCPU.get(checktime).get(onosname)));
                 System.out.println(" - migration을 한 deivce들의 cpu 합: " + migFlagsum);
                 System.out.println(" = " + newsum );
                 System.out.println("이 컨트롤러에 있는 device의 개수: " + size );
                 System.out.println("- migration을 한 device의 개수: " +  migFlagcnt);
                 System.out.println(" = " + (size - migFlagcnt) );
                 System.out.println( SwitchCPU + "<- newsum / (size-migFlgcnt)");
+                System.out.println("=============================================\n");
 
             }
             //Boolean MigrationFlag = true;
@@ -751,6 +768,7 @@ class monitor {
         while(iter.hasNext()){
             String key = (String)iter.next();
             Double ControllerCPU = (Double)ControllerList.get(key);
+            System.out.print("ControllerCPU " + ControllerCPU + "\n");
             if(ControllerCPU > AVGCPU.get(time)){
                 OverLoad.put(key,ControllerCPU);
             }else if(ControllerCPU <= AVGCPU.get(time)){
@@ -824,6 +842,11 @@ class monitor {
     public static void RealMigration (ControllerWithDevice MinBeanGet, String MovingSwitchID){
         //System.out.print("MovingswitchId 출력" + MovingSwitchID + "\n");
         //System.out.print("MovingswitchId IP출력" + MinBeanGet.getIP(MovingSwitchID) + "\n");
+        String mastership_url = "http://"
+                + "128.110.153.202"
+                + ":"
+                + "60001"
+                + "/onos/v1/mastership";
 
         //스위치가 옮겨갈 컨트롤러의 ip주소를 제대로 가져오지 못했을 때,
         if(MinBeanGet.getIP(MovingSwitchID).equals("-1") == true){
@@ -836,7 +859,10 @@ class monitor {
             rootObj.add("role", "MASTER");
 
             mastership restConn = new mastership();
-            restConn.putRESTwithJson(mastershipinmonitor.RESTURL_DOMASTERSHIP, rootObj);
+            System.out.print("Bug before: print IP " + MinBeanGet.ControllerIP + "\n");
+            System.out.print("Bug before: printf URL" + mastership_url + "\n");
+            restConn.putRESTwithJson(mastership_url, rootObj);
+            System.out.print("Bug after: printf URL" + mastership_url + "\n");
         }
     }
     public static void Initializing_migFlag(ControllerWithDevice Controller_atTime){
@@ -883,7 +909,7 @@ class monitor {
         final ArrayList<HashMap<String,String>> MatchTimetoDeviceID_ONOS3 = new ArrayList<HashMap<String, String>>();
         final HashMap<Integer,Double> AvgCPULoad= new HashMap<Integer, Double>();
 
-        int sleepSec = 20;
+        int sleepSec = 30;
         final ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(1);
 
         final HashMap<Double, Double> BringIdleCPU = new HashMap<>();
