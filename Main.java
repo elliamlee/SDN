@@ -20,6 +20,7 @@ public class Main {
         System.out.println("Front: sleep duration? ");
         Scanner scansleepduration = new Scanner(System.in);
         int sleepduration = scansleepduration.nextInt();
+        
 
         System.out.println("sleep count at the BACK? ");
         Scanner scanbacksleep = new Scanner(System.in);
